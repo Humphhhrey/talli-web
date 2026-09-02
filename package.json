@@ -1,0 +1,12 @@
+{
+  "name": "talli-web",
+  "version": "1.0.0",
+  "private": true,
+  "engines": { "node": ">=22.13.0" },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "start": "wrangler pages dev dist",
+    "test": "node --test"
+  },
+  "devDependencies": { "wrangler": "4.92.0" }
+}
