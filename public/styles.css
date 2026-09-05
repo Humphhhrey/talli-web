@@ -441,3 +441,18 @@ h1 span { color: var(--yellow); }
   .button { transition: none; }
   .button:hover { transform: none; }
 }
+
+/* Shared by the home page and invitation fallback pages. */
+.site-footer {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 28px;
+  padding: 20px max(24px, calc((100vw - 1370px) / 2)) 28px;
+  border-top: 1px solid var(--line);
+  background: var(--canvas);
+  color: var(--forest);
+  font-size: 14px;
+}
+.site-footer a { display: inline-flex; align-items: center; min-height: 44px; text-decoration: underline; text-underline-offset: 4px; }
+a:focus-visible { outline: 3px solid var(--forest); outline-offset: 5px; }
