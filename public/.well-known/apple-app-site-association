@@ -1,10 +1,16 @@
 {
   "applinks": {
-    "apps": [],
     "details": [
       {
-        "appID": "K448VGJ2WW.com.hamfri.talli",
-        "paths": ["/join/*"]
+        "appIDs": [
+          "K448VGJ2WW.com.hamfri.talli"
+        ],
+        "components": [
+          {
+            "/": "/verify-email/*",
+            "comment": "Open email-verification links in Talli"
+          }
+        ]
       }
     ]
   }
