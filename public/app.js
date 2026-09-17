@@ -1,6 +1,15 @@
 const appStoreUrl = '__TALLI_APP_STORE_URL__';
 const googlePlayUrl = 'https://play.google.com/store';
+let apiBaseUrl = '__TALLI_API_BASE_URL__';
+if (apiBaseUrl.startsWith('__')) {
+  apiBaseUrl = 'https://api.talli.hamfri.me';
+}
 const inviteToken = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.[A-Za-z0-9_-]+$/i;
+const verificationToken = /^[A-Za-z0-9_-]{20,100}$/;
+
+function escapeAttr(value) {
+  return String(value).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
 
 function logo() { return '<a class="logo" href="/" aria-label="Talli home"><img src="/talli-logo.png" alt="Talli" /></a>'; }
 
@@ -33,11 +42,71 @@ function invalidInvitePage() {
   return `<section class="invite-card">${logo()}<h1>This invite link is invalid.</h1><p>Ask the person who invited you to send a new Talli invite link.</p><a class="button primary" href="${appStoreUrl}">Get Talli <span aria-hidden="true">↓</span></a></section>`;
 }
 
+function verifyEmailLoadingPage() {
+  return `<section class="invite-card verify-card">${logo()}<div class="invite-icon loading-icon" aria-hidden="true">⏳</div><h1>Verifying your email…</h1><p>Please wait a moment while we confirm your account.</p></section>`;
+}
+
+function verifyEmailSuccessPage(token) {
+  const deepLink = token ? `talli://verify-email/${encodeURIComponent(token)}` : 'talli://';
+  return `<section class="invite-card verify-card">${logo()}<div class="invite-icon success-icon" aria-hidden="true">✓</div><h1>Email verified!</h1><p>Your email address has been confirmed. You can now return to the Talli app and sign in.</p><a class="button primary" href="${deepLink}">Open Talli <span aria-hidden="true">↗</span></a><a class="button secondary" href="${appStoreUrl}">Download Talli <span aria-hidden="true">↓</span></a></section>`;
+}
+
+function verifyEmailErrorPage(message) {
+  return `<section class="invite-card verify-card">${logo()}<div class="invite-icon error-icon" aria-hidden="true">✕</div><h1>Link expired or invalid</h1><p>${escapeAttr(message || 'Verification links can only be used once and expire after 30 minutes. Request a new link from the Talli app.')}</p><a class="button primary" href="${appStoreUrl}">Get Talli <span aria-hidden="true">↓</span></a></section>`;
+}
+
 function render() {
-  const match = window.location.pathname.match(/^\/join\/([^/]+)$/);
-  if (!match) return rootPage();
-  try { const token = decodeURIComponent(match[1]); return inviteToken.test(token) ? invitePage(token) : invalidInvitePage(); }
-  catch { return invalidInvitePage(); }
+  const joinMatch = window.location.pathname.match(/^\/join\/([^/]+)\/?$/);
+  if (joinMatch) {
+    try {
+      const token = decodeURIComponent(joinMatch[1]);
+      return inviteToken.test(token) ? invitePage(token) : invalidInvitePage();
+    } catch {
+      return invalidInvitePage();
+    }
+  }
+
+  const verifyMatch = window.location.pathname.match(/^\/verify-email\/([^/]+)\/?$/);
+  if (verifyMatch) {
+    try {
+      const token = decodeURIComponent(verifyMatch[1]);
+      return verificationToken.test(token) ? verifyEmailLoadingPage() : verifyEmailErrorPage();
+    } catch {
+      return verifyEmailErrorPage();
+    }
+  }
+
+  return rootPage();
+}
+
+async function autoVerifyEmail(token) {
+  try {
+    const response = await fetch(`${apiBaseUrl}/api/v1/auth/email-verification/confirm`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token })
+    });
+
+    if (response.ok) {
+      document.querySelector('#app').innerHTML = verifyEmailSuccessPage(token);
+    } else {
+      let message = 'Verification links can only be used once and expire after 30 minutes. Request a new link from the Talli app.';
+      try {
+        const problem = await response.json();
+        if (problem.detail) message = problem.detail;
+      } catch {}
+      document.querySelector('#app').innerHTML = verifyEmailErrorPage(message);
+    }
+  } catch {
+    document.querySelector('#app').innerHTML = `<section class="invite-card verify-card">${logo()}<div class="invite-icon error-icon" aria-hidden="true">!</div><h1>Connection error</h1><p>We couldn’t reach the server to confirm your email. Please check your connection or open Talli directly.</p><button id="retry-verify-btn" class="button primary" type="button">Try again <span aria-hidden="true">↻</span></button><a class="button secondary" href="${appStoreUrl}">Get Talli <span aria-hidden="true">↓</span></a></section>`;
+    const retryBtn = document.querySelector('#retry-verify-btn');
+    if (retryBtn) {
+      retryBtn.addEventListener('click', () => {
+        document.querySelector('#app').innerHTML = verifyEmailLoadingPage();
+        void autoVerifyEmail(token);
+      });
+    }
+  }
 }
 
 function animateAmount(element, target, duration) {
@@ -72,5 +141,17 @@ function playHeroExpenseAnimation() {
 
 const app = document.querySelector('#app');
 app.innerHTML = render();
-app.classList.toggle('landing-page', !window.location.pathname.startsWith('/join/'));
+const isFallbackPage = window.location.pathname.startsWith('/join/') || window.location.pathname.startsWith('/verify-email/');
+app.classList.toggle('landing-page', !isFallbackPage);
+
+const verifyMatch = window.location.pathname.match(/^\/verify-email\/([^/]+)\/?$/);
+if (verifyMatch) {
+  try {
+    const token = decodeURIComponent(verifyMatch[1]);
+    if (verificationToken.test(token)) {
+      void autoVerifyEmail(token);
+    }
+  } catch {}
+}
+
 playHeroExpenseAnimation();

@@ -405,6 +405,75 @@ h1 span { color: var(--yellow); }
   line-height: 1.55;
 }
 
+.text-link-button {
+  display: inline-block;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 18px 0 0;
+  color: var(--forest);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.text-link-button:hover {
+  color: #0e2c21;
+}
+
+.text-link-button:disabled {
+  color: var(--muted);
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
+.web-verify-section {
+  margin-top: 6px;
+}
+
+.verify-status {
+  margin-top: 14px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.verify-status .error {
+  color: #c93b2b;
+  font-weight: 600;
+}
+
+.verify-status .success {
+  border-radius: 12px;
+  background: #eaf3e8;
+  padding: 14px;
+  color: var(--forest);
+  font-weight: 600;
+}
+
+.success-icon {
+  background: #eaf3e8;
+  color: var(--forest);
+}
+
+.error-icon {
+  background: #fdeee9;
+  color: #c93b2b;
+}
+
+.loading-icon {
+  background: #eaf3e8;
+  color: var(--forest);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.08); opacity: 0.8; }
+}
+
 @media (max-width: 1060px) {
   .hero { grid-template-columns: 1fr; padding: 56px 0 32px; }
   .page.landing-page::before { background-position: 58% center; }
